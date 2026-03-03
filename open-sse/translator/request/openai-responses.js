@@ -186,12 +186,7 @@ export function openaiToOpenAIResponsesRequest(model, body, stream, credentials)
         : Array.isArray(msg.content)
           ? msg.content.map(c => {
             if (c.type === "text") return { type: contentType, text: c.text };
-            // Chat Completions → Responses API: image_url → input_image
-            if (c.type === "image_url") {
-              const url = typeof c.image_url === "string" ? c.image_url : c.image_url?.url;
-              return { type: "input_image", image_url: url, detail: c.image_url?.detail || "auto" };
-            }
-            if (c.type === "input_image") return c;
+            if (c.type === "image_url") return { type: "image_url", image_url: c.image_url };
             // Serialize any unknown type (tool_use, tool_result, thinking, etc.) as text
             const text = c.text || c.content || JSON.stringify(c);
             return { type: contentType, text: typeof text === "string" ? text : JSON.stringify(text) };
