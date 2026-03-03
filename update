@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+# Pull 9router from fork, build and restart PM2. Run from repo root: ./update
+set -e
+cd "$(dirname "$0")"
+FORK_URL="https://github.com/rodrigorodriguescosta/9router.git"
+PM2_APP="${PM2_APP_NAME:-9router}"
+
+echo "==> Set origin to fork and fetch"
+git remote set-url origin "$FORK_URL" 2>/dev/null || git remote add origin "$FORK_URL"
+git fetch origin
+
+if git show-ref --quiet refs/remotes/origin/main; then
+  BRANCH="main"
+else
+  BRANCH="master"
+fi
+echo "==> Checkout $BRANCH and pull from fork"
+git checkout "$BRANCH"
+git pull origin "$BRANCH"
+
+echo "==> Install dependencies"
+npm ci 2>/dev/null || npm install
+
+echo "==> Build"
+npm run build
+
+echo "==> Restart PM2 ($PM2_APP)"
+pm2 restart "$PM2_APP" 2>/dev/null || { echo "PM2 restart failed (app '$PM2_APP' not found?). Run: pm2 list"; exit 1; }
+
+echo "==> Done."
