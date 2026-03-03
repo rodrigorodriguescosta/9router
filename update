@@ -14,9 +14,8 @@ if git show-ref --quiet refs/remotes/origin/main; then
 else
   BRANCH="master"
 fi
-echo "==> Checkout $BRANCH and pull from fork"
-git checkout "$BRANCH"
-git pull origin "$BRANCH"
+echo "==> Reset to origin/$BRANCH (no divergent-branch errors)"
+git checkout -B "$BRANCH" "origin/$BRANCH"
 
 echo "==> Install dependencies"
 npm ci 2>/dev/null || npm install
