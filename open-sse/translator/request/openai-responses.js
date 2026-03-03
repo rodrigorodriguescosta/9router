@@ -155,7 +155,21 @@ export function openaiResponsesToOpenAIRequest(model, body, stream, credentials)
  */
 export function openaiToOpenAIResponsesRequest(model, body, stream, credentials) {
   // Body already in Responses API format (e.g. Cursor CLI calling /chat/completions with input[])
-  if (body.input) return { ...body, model, stream: true };
+  // Normalize content types: Cursor may send type:"text" instead of input_text/output_text
+  if (body.input) {
+    if (Array.isArray(body.input)) {
+      for (const item of body.input) {
+        if (item.type === "message" && Array.isArray(item.content)) {
+          const contentType = item.role === "user" ? "input_text" : "output_text";
+          item.content = item.content.map(c => {
+            if (c.type === "text") return { type: contentType, text: c.text };
+            return c;
+          });
+        }
+      }
+    }
+    return { ...body, model, stream: true };
+  }
 
   const result = {
     model,
