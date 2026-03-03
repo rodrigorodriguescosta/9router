@@ -200,7 +200,11 @@ export function openaiToOpenAIResponsesRequest(model, body, stream, credentials)
         : Array.isArray(msg.content)
           ? msg.content.map(c => {
             if (c.type === "text") return { type: contentType, text: c.text };
-            if (c.type === "image_url") return { type: "image_url", image_url: c.image_url };
+            if (c.type === "image_url") {
+              const url = typeof c.image_url === "string" ? c.image_url : c.image_url?.url;
+              return { type: "input_image", image_url: url, detail: c.image_url?.detail || "auto" };
+            }
+            if (c.type === "input_image") return c;
             // Serialize any unknown type (tool_use, tool_result, thinking, etc.) as text
             const text = c.text || c.content || JSON.stringify(c);
             return { type: contentType, text: typeof text === "string" ? text : JSON.stringify(text) };
@@ -233,10 +237,17 @@ export function openaiToOpenAIResponsesRequest(model, body, stream, credentials)
 
     // Convert tool results
     if (msg.role === "tool") {
+      // Codex expects output as string — flatten array content if needed
+      let output = msg.content;
+      if (Array.isArray(output)) {
+        output = output.map(c => (c.type === "text" ? c.text : JSON.stringify(c))).join("\n");
+      } else if (output === null || output === undefined) {
+        output = "";
+      }
       result.input.push({
         type: "function_call_output",
         call_id: msg.tool_call_id,
-        output: msg.content
+        output
       });
     }
   }
