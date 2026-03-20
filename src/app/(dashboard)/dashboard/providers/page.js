@@ -214,11 +214,10 @@ export default function ProvidersPage() {
             <button
               onClick={() => handleBatchTest("oauth")}
               disabled={!!testingMode}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
-                testingMode === "oauth"
-                  ? "bg-primary/20 border-primary/40 text-primary animate-pulse"
-                  : "bg-bg border-border text-text-muted hover:text-text-main hover:border-primary/40"
-              }`}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${testingMode === "oauth"
+                ? "bg-primary/20 border-primary/40 text-primary animate-pulse"
+                : "bg-bg border-border text-text-muted hover:text-text-main hover:border-primary/40"
+                }`}
               title="Test all OAuth connections"
               aria-label="Test all OAuth connections"
             >
@@ -252,12 +251,11 @@ export default function ProvidersPage() {
           <button
             onClick={() => handleBatchTest("free")}
             disabled={!!testingMode}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
-              testingMode === "free"
-                ? "bg-primary/20 border-primary/40 text-primary animate-pulse"
-                : "bg-bg border-border text-text-muted hover:text-text-main hover:border-primary/40"
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${testingMode === "free"
+              ? "bg-primary/20 border-primary/40 text-primary animate-pulse"
+              : "bg-bg border-border text-text-muted hover:text-text-main hover:border-primary/40"
               }`}
-              title="Test all Free connections"
+            title="Test all Free connections"
             aria-label="Test all Free provider connections"
           >
             <span className={`material-symbols-outlined text-[14px]${testingMode === "free" ? " animate-spin" : ""}`}>
@@ -289,12 +287,11 @@ export default function ProvidersPage() {
           <button
             onClick={() => handleBatchTest("apikey")}
             disabled={!!testingMode}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
-              testingMode === "apikey"
-                ? "bg-primary/20 border-primary/40 text-primary animate-pulse"
-                : "bg-bg border-border text-text-muted hover:text-text-main hover:border-primary/40"
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${testingMode === "apikey"
+              ? "bg-primary/20 border-primary/40 text-primary animate-pulse"
+              : "bg-bg border-border text-text-muted hover:text-text-main hover:border-primary/40"
               }`}
-              title="Test all API Key connections"
+            title="Test all API Key connections"
             aria-label="Test all API Key connections"
           >
             <span className={`material-symbols-outlined text-[14px]${testingMode === "apikey" ? " animate-spin" : ""}`}>
@@ -324,15 +321,14 @@ export default function ProvidersPage() {
             API Key Compatible Providers{" "}
           </h2>
           <div className="flex gap-2">
-            {(compatibleProviders.length > 0 || anthropicCompatibleProviders.length > 0) && (
+            {/* {(compatibleProviders.length > 0 || anthropicCompatibleProviders.length > 0) && (
               <button
                 onClick={() => handleBatchTest("compatible")}
                 disabled={!!testingMode}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
-                  testingMode === "compatible"
-                    ? "bg-primary/20 border-primary/40 text-primary animate-pulse"
-                    : "bg-bg border-border text-text-muted hover:text-text-main hover:border-primary/40"
-                }`}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${testingMode === "compatible"
+                  ? "bg-primary/20 border-primary/40 text-primary animate-pulse"
+                  : "bg-bg border-border text-text-muted hover:text-text-main hover:border-primary/40"
+                  }`}
                 title="Test all Compatible connections"
               >
                 <span className={`material-symbols-outlined text-[14px]${testingMode === "compatible" ? " animate-spin" : ""}`}>
@@ -340,7 +336,7 @@ export default function ProvidersPage() {
                 </span>
                 {testingMode === "compatible" ? "Testing..." : "Test All"}
               </button>
-            )}
+            )} */}
             <Button size="sm" icon="add" onClick={() => setShowAddAnthropicCompatibleModal(true)}>
               Add Anthropic Compatible
             </Button>
@@ -449,7 +445,7 @@ function ProviderCard({ providerId, provider, stats, authType, onToggle }) {
           <div className="flex items-center gap-3">
             <div
               className="size-8 rounded-lg flex items-center justify-center"
-              style={{ backgroundColor: `${provider.color}15` }}
+              style={{ backgroundColor: `${provider.color?.length > 7 ? provider.color : provider.color + "15"}` }}
             >
               {imgError ? (
                 <span className="text-xs font-bold" style={{ color: provider.color }}>
@@ -501,7 +497,7 @@ function ProviderCard({ providerId, provider, stats, authType, onToggle }) {
                 <Toggle
                   size="sm"
                   checked={!allDisabled}
-                  onChange={() => {}}
+                  onChange={() => { }}
                   title={allDisabled ? "Enable provider" : "Disable provider"}
                 />
               </div>
@@ -561,7 +557,7 @@ function ApiKeyProviderCard({ providerId, provider, stats, authType, onToggle })
           <div className="flex items-center gap-3">
             <div
               className="size-8 rounded-lg flex items-center justify-center"
-              style={{ backgroundColor: `${provider.color}15` }}
+              style={{ backgroundColor: `${provider.color?.length > 7 ? provider.color : provider.color + "15"}` }}
             >
               {imgError ? (
                 <span className="text-xs font-bold" style={{ color: provider.color }}>
@@ -621,7 +617,7 @@ function ApiKeyProviderCard({ providerId, provider, stats, authType, onToggle })
                 <Toggle
                   size="sm"
                   checked={!allDisabled}
-                  onChange={() => {}}
+                  onChange={() => { }}
                   title={allDisabled ? "Enable provider" : "Disable provider"}
                 />
               </div>
@@ -661,6 +657,7 @@ function AddOpenAICompatibleModal({ isOpen, onClose, onCreated }) {
   });
   const [submitting, setSubmitting] = useState(false);
   const [checkKey, setCheckKey] = useState("");
+  const [checkModelId, setCheckModelId] = useState("");
   const [validating, setValidating] = useState(false);
   const [validationResult, setValidationResult] = useState(null);
 
@@ -709,15 +706,41 @@ function AddOpenAICompatibleModal({ isOpen, onClose, onCreated }) {
       const res = await fetch("/api/provider-nodes/validate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ baseUrl: formData.baseUrl, apiKey: checkKey, type: "openai-compatible" }),
+        body: JSON.stringify({
+          baseUrl: formData.baseUrl,
+          apiKey: checkKey,
+          type: "openai-compatible",
+          modelId: checkModelId.trim() || undefined
+        }),
       });
       const data = await res.json();
-      setValidationResult(data.valid ? "success" : "failed");
+      setValidationResult(data);
     } catch {
-      setValidationResult("failed");
+      setValidationResult({ valid: false, error: "Network error" });
     } finally {
       setValidating(false);
     }
+  };
+
+  // Helper to render validation result
+  const renderValidationResult = () => {
+    if (!validationResult) return null;
+    const { valid, error, method } = validationResult;
+
+    if (valid) {
+      return (
+        <>
+          <Badge variant="success">Valid</Badge>
+          {method === "chat" && <span className="text-sm text-text-muted">(via inference test)</span>}
+        </>
+      );
+    }
+    return (
+      <div className="flex flex-col gap-1">
+        <Badge variant="error">Invalid</Badge>
+        {error && <span className="text-sm text-red-500">{error}</span>}
+      </div>
+    );
   };
 
   return (
@@ -750,25 +773,25 @@ function AddOpenAICompatibleModal({ isOpen, onClose, onCreated }) {
           placeholder="https://api.openai.com/v1"
           hint="Use the base URL (ending in /v1) for your OpenAI-compatible API."
         />
-        <div className="flex gap-2">
-          <Input
-            label="API Key (for Check)"
-            type="password"
-            value={checkKey}
-            onChange={(e) => setCheckKey(e.target.value)}
-            className="flex-1"
-          />
-          <div className="pt-6">
-            <Button onClick={handleValidate} disabled={!checkKey || validating || !formData.baseUrl.trim()} variant="secondary">
-              {validating ? "Checking..." : "Check"}
-            </Button>
-          </div>
+        <Input
+          label="API Key (for Check)"
+          type="password"
+          value={checkKey}
+          onChange={(e) => setCheckKey(e.target.value)}
+        />
+        <Input
+          label="Model ID (optional)"
+          value={checkModelId}
+          onChange={(e) => setCheckModelId(e.target.value)}
+          placeholder="e.g. gpt-4, claude-3-opus"
+          hint="If provider lacks /models endpoint, enter a model ID to validate via chat/completions instead."
+        />
+        <div className="flex items-center gap-3">
+          <Button onClick={handleValidate} disabled={!checkKey || validating || !formData.baseUrl.trim()} variant="secondary">
+            {validating ? "Checking..." : "Check"}
+          </Button>
+          {renderValidationResult()}
         </div>
-        {validationResult && (
-          <Badge variant={validationResult === "success" ? "success" : "error"}>
-            {validationResult === "success" ? "Valid" : "Invalid"}
-          </Badge>
-        )}
         <div className="flex gap-2">
           <Button onClick={handleSubmit} fullWidth disabled={!formData.name.trim() || !formData.prefix.trim() || !formData.baseUrl.trim() || submitting}>
             {submitting ? "Creating..." : "Create"}
@@ -794,13 +817,15 @@ function AddAnthropicCompatibleModal({ isOpen, onClose, onCreated }) {
   });
   const [submitting, setSubmitting] = useState(false);
   const [checkKey, setCheckKey] = useState("");
+  const [checkModelId, setCheckModelId] = useState("");
   const [validating, setValidating] = useState(false);
-  const [validationResult, setValidationResult] = useState(null);
+  const [validationResult, setValidationResult] = useState(null); // { valid, error, method }
 
   useEffect(() => {
     if (isOpen) {
       setValidationResult(null);
       setCheckKey("");
+      setCheckModelId("");
     }
   }, [isOpen]);
 
@@ -838,15 +863,41 @@ function AddAnthropicCompatibleModal({ isOpen, onClose, onCreated }) {
       const res = await fetch("/api/provider-nodes/validate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ baseUrl: formData.baseUrl, apiKey: checkKey, type: "anthropic-compatible" }),
+        body: JSON.stringify({
+          baseUrl: formData.baseUrl,
+          apiKey: checkKey,
+          type: "anthropic-compatible",
+          modelId: checkModelId.trim() || undefined
+        }),
       });
       const data = await res.json();
-      setValidationResult(data.valid ? "success" : "failed");
+      setValidationResult(data);
     } catch {
-      setValidationResult("failed");
+      setValidationResult({ valid: false, error: "Network error" });
     } finally {
       setValidating(false);
     }
+  };
+
+  // Helper to render validation result
+  const renderValidationResult = () => {
+    if (!validationResult) return null;
+    const { valid, error, method } = validationResult;
+
+    if (valid) {
+      return (
+        <>
+          <Badge variant="success">Valid</Badge>
+          {method === "chat" && <span className="text-sm text-text-muted">(via inference test)</span>}
+        </>
+      );
+    }
+    return (
+      <div className="flex flex-col gap-1">
+        <Badge variant="error">Invalid</Badge>
+        {error && <span className="text-sm text-red-500">{error}</span>}
+      </div>
+    );
   };
 
   return (
@@ -873,25 +924,25 @@ function AddAnthropicCompatibleModal({ isOpen, onClose, onCreated }) {
           placeholder="https://api.anthropic.com/v1"
           hint="Use the base URL (ending in /v1) for your Anthropic-compatible API. The system will append /messages."
         />
-        <div className="flex gap-2">
-          <Input
-            label="API Key (for Check)"
-            type="password"
-            value={checkKey}
-            onChange={(e) => setCheckKey(e.target.value)}
-            className="flex-1"
-          />
-          <div className="pt-6">
-            <Button onClick={handleValidate} disabled={!checkKey || validating || !formData.baseUrl.trim()} variant="secondary">
-              {validating ? "Checking..." : "Check"}
-            </Button>
-          </div>
+        <Input
+          label="API Key (for Check)"
+          type="password"
+          value={checkKey}
+          onChange={(e) => setCheckKey(e.target.value)}
+        />
+        <Input
+          label="Model ID (optional)"
+          value={checkModelId}
+          onChange={(e) => setCheckModelId(e.target.value)}
+          placeholder="e.g. claude-3-opus"
+          hint="If provider lacks /models endpoint, enter a model ID to validate via chat/completions instead."
+        />
+        <div className="flex items-center gap-3">
+          <Button onClick={handleValidate} disabled={!checkKey || validating || !formData.baseUrl.trim()} variant="secondary">
+            {validating ? "Checking..." : "Check"}
+          </Button>
+          {renderValidationResult()}
         </div>
-        {validationResult && (
-          <Badge variant={validationResult === "success" ? "success" : "error"}>
-            {validationResult === "success" ? "Valid" : "Invalid"}
-          </Badge>
-        )}
         <div className="flex gap-2">
           <Button onClick={handleSubmit} fullWidth disabled={!formData.name.trim() || !formData.prefix.trim() || !formData.baseUrl.trim() || submitting}>
             {submitting ? "Creating..." : "Create"}
@@ -955,9 +1006,8 @@ function ProviderTestResultsView({ results }) {
             <span className="text-text-muted font-mono tabular-nums">{r.latencyMs}ms</span>
           )}
           <span
-            className={`text-[10px] uppercase font-bold px-1.5 py-0.5 rounded ${
-              r.valid ? "bg-emerald-500/15 text-emerald-400" : "bg-red-500/15 text-red-400"
-            }`}
+            className={`text-[10px] uppercase font-bold px-1.5 py-0.5 rounded ${r.valid ? "bg-emerald-500/15 text-emerald-400" : "bg-red-500/15 text-red-400"
+              }`}
           >
             {r.valid ? "OK" : r.diagnosis?.type || "ERROR"}
           </span>

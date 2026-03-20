@@ -12,15 +12,15 @@ import { ConfirmModal } from "./Modal";
 const navItems = [
   { href: "/dashboard/endpoint", label: "Endpoint", icon: "api" },
   { href: "/dashboard/providers", label: "Providers", icon: "dns" },
+  { href: "/dashboard/proxy-pools", label: "Proxy Pools", icon: "lan" },
   { href: "/dashboard/combos", label: "Combos", icon: "layers" },
   { href: "/dashboard/usage", label: "Usage", icon: "bar_chart" },
   { href: "/dashboard/quota", label: "Quota Tracker", icon: "data_usage" },
+  { href: "/dashboard/mitm", label: "MITM", icon: "security" },
   { href: "/dashboard/cli-tools", label: "CLI Tools", icon: "terminal" },
 ];
 
-// Debug items (only show when ENABLE_REQUEST_LOGS=true)
 const debugItems = [
-  // { href: "/dashboard/translator", label: "Translator", icon: "translate" },
   { href: "/dashboard/console-log", label: "Console Log", icon: "terminal" },
 ];
 
@@ -34,6 +34,14 @@ export default function Sidebar({ onClose }) {
   const [isShuttingDown, setIsShuttingDown] = useState(false);
   const [isDisconnected, setIsDisconnected] = useState(false);
   const [updateInfo, setUpdateInfo] = useState(null);
+  const [enableTranslator, setEnableTranslator] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/settings")
+      .then(res => res.json())
+      .then(data => { if (data.enableTranslator) setEnableTranslator(true); })
+      .catch(() => {});
+  }, []);
 
   // Lazy check for new npm version on mount
   useEffect(() => {
@@ -64,7 +72,7 @@ export default function Sidebar({ onClose }) {
 
   return (
     <>
-      <aside className="flex w-72 flex-col border-r border-black/5 dark:border-white/5 bg-vibrancy backdrop-blur-xl transition-colors duration-300">
+      <aside className="flex w-72 flex-col border-r border-black/5 dark:border-white/5 bg-vibrancy backdrop-blur-xl transition-colors duration-300 min-h-full">
         {/* Traffic lights */}
         <div className="flex items-center gap-2 px-6 pt-5 pb-2">
           <div className="w-3 h-3 rounded-full bg-[#FF5F56]" />
@@ -128,6 +136,23 @@ export default function Sidebar({ onClose }) {
               <p className="px-4 text-xs font-semibold text-text-muted/60 uppercase tracking-wider mb-2">
                 Debug
               </p>
+              {enableTranslator && (
+                <Link
+                  href="/dashboard/translator"
+                  onClick={onClose}
+                  className={cn(
+                    "flex items-center gap-3 px-4 py-2 rounded-lg transition-all group",
+                    isActive("/dashboard/translator")
+                      ? "bg-primary/10 text-primary"
+                      : "text-text-muted hover:bg-surface/50 hover:text-text-main"
+                  )}
+                >
+                  <span className={cn("material-symbols-outlined text-[18px]", isActive("/dashboard/translator") ? "fill-1" : "group-hover:text-primary transition-colors")}>
+                    translate
+                  </span>
+                  <span className="text-sm font-medium">Translator</span>
+                </Link>
+              )}
               {debugItems.map((item) => (
                 <Link
                   key={item.href}

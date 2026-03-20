@@ -377,7 +377,7 @@ const PROVIDERS = {
       return await response.json();
     },
     postExchange: async (tokens) => {
-      // Fetch user info
+      // Fetch user info (MUST succeed to get API key)
       const userInfoRes = await fetch(
         `${IFLOW_CONFIG.userInfoUrl}?accessToken=${encodeURIComponent(tokens.access_token)}`,
         {
@@ -386,8 +386,30 @@ const PROVIDERS = {
           },
         }
       );
-      const result = userInfoRes.ok ? await userInfoRes.json() : {};
-      const userInfo = result.success ? result.data : {};
+      
+      if (!userInfoRes.ok) {
+        const errorText = await userInfoRes.text();
+        throw new Error(`Failed to fetch user info: ${errorText}`);
+      }
+      
+      const result = await userInfoRes.json();
+      if (!result.success) {
+        throw new Error(`User info request failed: ${result.message || 'Unknown error'}`);
+      }
+      
+      const userInfo = result.data || {};
+      
+      // Validate API key (critical for iFlow)
+      if (!userInfo.apiKey || userInfo.apiKey.trim() === "") {
+        throw new Error("Empty API key returned from iFlow");
+      }
+      
+      // Validate email/phone
+      const email = userInfo.email?.trim() || userInfo.phone?.trim();
+      if (!email) {
+        throw new Error("Missing account email/phone in user info");
+      }
+      
       return { userInfo };
     },
     mapTokens: (tokens, extra) => ({
@@ -638,6 +660,7 @@ const PROVIDERS = {
             access_token: data.accessToken,
             refresh_token: data.refreshToken,
             expires_in: data.expiresIn,
+            profile_arn: data?.profileArn || null,
             // Store client credentials for refresh
             _clientId: extraData?._clientId,
             _clientSecret: extraData?._clientSecret,
@@ -653,15 +676,19 @@ const PROVIDERS = {
         },
       };
     },
-    mapTokens: (tokens) => ({
-      accessToken: tokens.access_token,
-      refreshToken: tokens.refresh_token,
-      expiresIn: tokens.expires_in,
-      providerSpecificData: {
-        clientId: tokens._clientId,
-        clientSecret: tokens._clientSecret,
-      },
-    }),
+    mapTokens: (tokens) => {
+      const mapped = {
+        accessToken: tokens.access_token,
+        refreshToken: tokens.refresh_token,
+        expiresIn: tokens.expires_in,
+        providerSpecificData: {
+          profileArn: tokens?.profile_arn || null,
+          clientId: tokens._clientId,
+          clientSecret: tokens._clientSecret,
+        },
+      };
+      return mapped;
+    },
   },
 
   cursor: {
