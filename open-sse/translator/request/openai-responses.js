@@ -159,7 +159,21 @@ export function openaiResponsesToOpenAIRequest(model, body, stream, credentials)
  */
 export function openaiToOpenAIResponsesRequest(model, body, stream, credentials) {
   // Body already in Responses API format (e.g. Cursor CLI calling /chat/completions with input[])
-  if (body.input) return { ...body, model, stream: true };
+  // Normalize content types: Cursor may send type:"text" instead of input_text/output_text
+  if (body.input) {
+    if (Array.isArray(body.input)) {
+      for (const item of body.input) {
+        if (item.type === "message" && Array.isArray(item.content)) {
+          const contentType = item.role === "user" ? "input_text" : "output_text";
+          item.content = item.content.map(c => {
+            if (c.type === "text") return { type: contentType, text: c.text };
+            return c;
+          });
+        }
+      }
+    }
+    return { ...body, model, stream: true };
+  }
 
   const result = {
     model,
@@ -230,11 +244,15 @@ export function openaiToOpenAIResponsesRequest(model, body, stream, credentials)
 
     // Convert tool results - output must be a string for Responses API
     if (msg.role === "tool") {
-      const output = typeof msg.content === "string"
-        ? msg.content
-        : Array.isArray(msg.content)
-          ? msg.content.map(c => c.text || JSON.stringify(c)).join("")
-          : JSON.stringify(msg.content);
+      // Codex expects output as string — flatten array content if needed
+      let output = msg.content;
+      if (Array.isArray(output)) {
+        output = output.map(c => (c.type === "text" ? c.text : JSON.stringify(c))).join("\n");
+      } else if (output === null || output === undefined) {
+        output = "";
+      } else if (typeof output !== "string") {
+        output = JSON.stringify(output);
+      }
       result.input.push({
         type: "function_call_output",
         call_id: msg.tool_call_id,
