@@ -65,7 +65,7 @@ export const PROVIDER_MODELS = {
   ag: [  // Antigravity - special case: models call different backends
     { id: "gemini-3.1-pro-high", name: "Gemini 3 Pro High" },
     { id: "gemini-3.1-pro-low", name: "Gemini 3 Pro Low" },
-    { id: "gemini-3-flash", name: "Gemini 3 Flash" },
+    { id: "gemini-3-flash", name: "Gemini 3 Flash", thinking: false }, // AG strips thinking for this model
     { id: "claude-sonnet-4-6", name: "Claude Sonnet 4.6" },
     { id: "claude-opus-4-6-thinking", name: "Claude Opus 4.6 Thinking" },
     { id: "gpt-oss-120b-medium", name: "GPT OSS 120B Medium" },
@@ -107,9 +107,9 @@ export const PROVIDER_MODELS = {
     // { id: "claude-opus-4.5", name: "Claude Opus 4.5" },
     { id: "claude-sonnet-4.5", name: "Claude Sonnet 4.5" },
     { id: "claude-haiku-4.5", name: "Claude Haiku 4.5" },
-    { id: "deepseek-3.2", name: "DeepSeek 3.2" },
-    { id: "deepseek-3.1", name: "DeepSeek 3.1" },
-    { id: "qwen3-coder-next", name: "Qwen3 Coder Next" },
+    { id: "deepseek-3.2", name: "DeepSeek 3.2", strip: ["image", "audio"] },
+    { id: "deepseek-3.1", name: "DeepSeek 3.1", strip: ["image", "audio"] },
+    { id: "qwen3-coder-next", name: "Qwen3 Coder Next", strip: ["image", "audio"] },
   ],
   cu: [  // Cursor IDE
     { id: "default", name: "Auto (Server Picks)" },
@@ -142,6 +142,13 @@ export const PROVIDER_MODELS = {
     { id: "deepseek/deepseek-chat", name: "DeepSeek Chat" },
     { id: "deepseek/deepseek-reasoner", name: "DeepSeek Reasoner" },
   ],
+  oc: [  // OpenCode
+    { id: "nemotron-3-super-free", name: "Nemotron 3 Super" },
+    { id: "qwen3.6-plus-free", name: "Qwen 3.6 Plus" },
+    // { id: "big-pickle", name: "Big Pickle", targetFormat: "claude" },
+    { id: "minimax-m2.5-free", name: "MiniMax M2.5", targetFormat: "claude" },
+  ],
+
   cl: [  // Cline
     { id: "anthropic/claude-sonnet-4.6", name: "Claude Sonnet 4.6" },
     { id: "anthropic/claude-opus-4.6", name: "Claude Opus 4.6" },
@@ -197,7 +204,6 @@ export const PROVIDER_MODELS = {
     { id: "gemini-3.1-flash-image-preview", name: "Gemini 3.1 Flash Image Preview" },
     // Gemini 3 series
     { id: "gemini-3-flash-preview", name: "Gemini 3 Flash Preview" },
-    { id: "gemini-3-flash-lite-preview", name: "Gemini 3 Flash Lite Preview" },
     // Gemini 2.5 series
     { id: "gemini-2.5-pro", name: "Gemini 2.5 Pro" },
     { id: "gemini-2.5-flash", name: "Gemini 2.5 Flash" },
@@ -211,15 +217,15 @@ export const PROVIDER_MODELS = {
     { id: "text-embedding-005", name: "Text Embedding 005", type: "embedding" },
     { id: "text-embedding-004", name: "Text Embedding 004 (Legacy)", type: "embedding" },
   ],
-  openrouter: [
-    { id: "auto", name: "Auto (Best Available)" },
-  ],
+  openrouter: [],
   glm: [
+    { id: "glm-5.1", name: "GLM 5.1" },
     { id: "glm-5", name: "GLM 5" },
     { id: "glm-4.7", name: "GLM 4.7" },
     { id: "glm-4.6v", name: "GLM 4.6V (Vision)" },
   ],
   "glm-cn": [
+    { id: "glm-5.1", name: "GLM 5.1" },
     { id: "glm-5", name: "GLM 5" },
     { id: "glm-4.7", name: "GLM-4.7" },
     { id: "glm-4.6", name: "GLM-4.6" },
@@ -311,10 +317,6 @@ export const PROVIDER_MODELS = {
   nvidia: [
     { id: "moonshotai/kimi-k2.5", name: "Kimi K2.5" },
     { id: "z-ai/glm4.7", name: "GLM 4.7" },
-    { id: "deepseek-ai/deepseek-v3.2", name: "DeepSeek V3.2" },
-    { id: "nvidia/llama-3.3-70b-instruct", name: "Llama 3.3 70B" },
-    { id: "meta/llama-4-maverick-17b-128e-instruct", name: "Llama 4 Maverick" },
-    { id: "deepseek/deepseek-r1", name: "DeepSeek R1" },
   ],
   nebius: [
     { id: "meta-llama/Llama-3.3-70B-Instruct", name: "Llama 3.3 70B Instruct" },
@@ -408,6 +410,7 @@ const OAUTH_ALIASES = {
   "kimi-coding": "kmc",
   kilocode: "kc",
   cline: "cl",
+  opencode: "oc",
   vertex: "vertex",
   "vertex-partner": "vertex-partner",
 };
@@ -420,4 +423,11 @@ export const PROVIDER_ID_TO_ALIAS = Object.fromEntries(
 export function getModelsByProviderId(providerId) {
   const alias = PROVIDER_ID_TO_ALIAS[providerId] || providerId;
   return PROVIDER_MODELS[alias] || [];
+}
+
+// Get strip list for a model entry (explicit opt-in only)
+// Returns array of content types to strip, e.g. ["image", "audio"]
+export function getModelStrip(alias, modelId) {
+  const entry = PROVIDER_MODELS[alias]?.find(m => m.id === modelId);
+  return entry?.strip || [];
 }
