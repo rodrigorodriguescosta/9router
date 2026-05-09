@@ -1,4 +1,5 @@
 import { AntigravityExecutor } from "./antigravity.js";
+import { AzureExecutor } from "./azure.js";
 import { GeminiCLIExecutor } from "./gemini-cli.js";
 import { GithubExecutor } from "./github.js";
 import { IFlowExecutor } from "./iflow.js";
@@ -12,10 +13,13 @@ import { OpenCodeExecutor } from "./opencode.js";
 import { OpenCodeGoExecutor } from "./opencode-go.js";
 import { GrokWebExecutor } from "./grok-web.js";
 import { PerplexityWebExecutor } from "./perplexity-web.js";
+import { OllamaLocalExecutor } from "./ollama-local.js";
+import { CommandCodeExecutor } from "./commandcode.js";
 import { DefaultExecutor } from "./default.js";
 
 const executors = {
   antigravity: new AntigravityExecutor(),
+  azure: new AzureExecutor(),
   "gemini-cli": new GeminiCLIExecutor(),
   github: new GithubExecutor(),
   iflow: new IFlowExecutor(),
@@ -31,6 +35,8 @@ const executors = {
   "opencode-go": new OpenCodeGoExecutor(),
   "grok-web": new GrokWebExecutor(),
   "perplexity-web": new PerplexityWebExecutor(),
+  "ollama-local": new OllamaLocalExecutor(),
+  commandcode: new CommandCodeExecutor(),
 };
 
 const defaultCache = new Map();
@@ -47,6 +53,7 @@ export function hasSpecializedExecutor(provider) {
 
 export { BaseExecutor } from "./base.js";
 export { AntigravityExecutor } from "./antigravity.js";
+export { AzureExecutor } from "./azure.js";
 export { GeminiCLIExecutor } from "./gemini-cli.js";
 export { GithubExecutor } from "./github.js";
 export { IFlowExecutor } from "./iflow.js";
@@ -61,3 +68,5 @@ export { OpenCodeExecutor } from "./opencode.js";
 export { OpenCodeGoExecutor } from "./opencode-go.js";
 export { GrokWebExecutor } from "./grok-web.js";
 export { PerplexityWebExecutor } from "./perplexity-web.js";
+export { OllamaLocalExecutor } from "./ollama-local.js";
+export { CommandCodeExecutor } from "./commandcode.js";

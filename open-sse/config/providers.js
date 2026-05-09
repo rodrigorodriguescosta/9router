@@ -156,6 +156,16 @@ export const PROVIDERS = {
     format: "openai",
     headers: {}
   },
+  "volcengine-ark": {
+    baseUrl: "https://ark.cn-beijing.volces.com/api/coding/v3/chat/completions",
+    format: "openai",
+    headers: {}
+  },
+  byteplus: {
+    baseUrl: "https://ark.ap-southeast.bytepluses.com/api/coding/v3/chat/completions",
+    format: "openai",
+    headers: {}
+  },
   github: {
     baseUrl: "https://api.githubcopilot.com/chat/completions",
     responsesUrl: "https://api.githubcopilot.com/responses",
@@ -240,6 +250,14 @@ export const PROVIDERS = {
   deepseek: {
     baseUrl: "https://api.deepseek.com/chat/completions",
     format: "openai"
+  },
+  commandcode: {
+    baseUrl: "https://api.commandcode.ai/alpha/generate",
+    format: "commandcode",
+    headers: {
+      "x-command-code-version": "0.25.7",
+      "x-cli-environment": "cli"
+    }
   },
   groq: {
     baseUrl: "https://api.groq.com/openai/v1/chat/completions",
@@ -351,6 +369,20 @@ export const PROVIDERS = {
     baseUrl: "https://www.perplexity.ai/rest/sse/perplexity_ask",
     format: "perplexity-web",
     authType: "cookie"
+  },
+  azure: {
+    baseUrl: "",
+    format: "openai",
+    headers: {}
+  },
+  // Cloudflare Workers AI - {accountId} resolved from credentials.providerSpecificData.accountId
+  "cloudflare-ai": {
+    baseUrl: "https://api.cloudflare.com/client/v4/accounts/{accountId}/ai/v1/chat/completions",
+    format: "openai"
+  },
+  "xiaomi-mimo": {
+    baseUrl: "https://api.xiaomimimo.com/v1/chat/completions",
+    format: "openai"
   },
 };
 

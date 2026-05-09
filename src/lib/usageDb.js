@@ -5,12 +5,11 @@ import path from "path";
 import fs from "fs";
 import { DATA_DIR } from "@/lib/dataDir.js";
 
-const isCloud = typeof caches !== 'undefined' || typeof caches === 'object';
-const DB_FILE = isCloud ? null : path.join(DATA_DIR, "usage.json");
-const LOG_FILE = isCloud ? null : path.join(DATA_DIR, "log.txt");
+const DB_FILE = path.join(DATA_DIR, "usage.json");
+const LOG_FILE = path.join(DATA_DIR, "log.txt");
 
 // Ensure data directory exists
-if (!isCloud && fs && typeof fs.existsSync === "function") {
+if (fs && typeof fs.existsSync === "function") {
   try {
     if (!fs.existsSync(DATA_DIR)) {
       fs.mkdirSync(DATA_DIR, { recursive: true });
@@ -117,6 +116,44 @@ const pendingTimers = global._pendingTimers;
 
 const PENDING_TIMEOUT_MS = 60 * 1000; // 1 minute
 
+// In-memory ring buffer for recent requests (avoids disk I/O on every SSE emit)
+const RING_CAP = 50;
+const CONN_CACHE_TTL_MS = 30 * 1000;
+if (!global._recentRing) global._recentRing = { items: [], initialized: false };
+if (!global._connectionMapCache) global._connectionMapCache = { map: {}, ts: 0 };
+const recentRing = global._recentRing;
+const connCache = global._connectionMapCache;
+
+function pushToRing(entry) {
+  recentRing.items.push(entry);
+  if (recentRing.items.length > RING_CAP) {
+    recentRing.items = recentRing.items.slice(-RING_CAP);
+  }
+}
+
+async function getConnectionMapCached() {
+  if (Date.now() - connCache.ts < CONN_CACHE_TTL_MS) return connCache.map;
+  try {
+    const { getProviderConnections } = await import("@/lib/localDb.js");
+    const allConnections = await getProviderConnections();
+    const map = {};
+    for (const conn of allConnections) map[conn.id] = conn.name || conn.email || conn.id;
+    connCache.map = map;
+    connCache.ts = Date.now();
+  } catch {}
+  return connCache.map;
+}
+
+async function ensureRingInitialized() {
+  if (recentRing.initialized) return;
+  recentRing.initialized = true;
+  try {
+    const db = await getUsageDb();
+    const history = db.data.history || [];
+    recentRing.items = history.slice(-RING_CAP);
+  } catch {}
+}
+
 /**
  * Track a pending request
  * @param {string} model
@@ -132,12 +169,19 @@ export function trackPendingRequest(model, provider, connectionId, started, erro
   // Track by model
   if (!pendingRequests.byModel[modelKey]) pendingRequests.byModel[modelKey] = 0;
   pendingRequests.byModel[modelKey] = Math.max(0, pendingRequests.byModel[modelKey] + (started ? 1 : -1));
+  if (pendingRequests.byModel[modelKey] === 0) delete pendingRequests.byModel[modelKey];
 
   // Track by account
   if (connectionId) {
     if (!pendingRequests.byAccount[connectionId]) pendingRequests.byAccount[connectionId] = {};
     if (!pendingRequests.byAccount[connectionId][modelKey]) pendingRequests.byAccount[connectionId][modelKey] = 0;
     pendingRequests.byAccount[connectionId][modelKey] = Math.max(0, pendingRequests.byAccount[connectionId][modelKey] + (started ? 1 : -1));
+    if (pendingRequests.byAccount[connectionId][modelKey] === 0) {
+      delete pendingRequests.byAccount[connectionId][modelKey];
+      if (Object.keys(pendingRequests.byAccount[connectionId]).length === 0) {
+        delete pendingRequests.byAccount[connectionId];
+      }
+    }
   }
 
   if (started) {
@@ -175,16 +219,7 @@ export function trackPendingRequest(model, provider, connectionId, started, erro
  */
 export async function getActiveRequests() {
   const activeRequests = [];
-
-  // Build active requests from pending state
-  let connectionMap = {};
-  try {
-    const { getProviderConnections } = await import("@/lib/localDb.js");
-    const allConnections = await getProviderConnections();
-    for (const conn of allConnections) {
-      connectionMap[conn.id] = conn.name || conn.email || conn.id;
-    }
-  } catch {}
+  const connectionMap = await getConnectionMapCached();
 
   for (const [connectionId, models] of Object.entries(pendingRequests.byAccount)) {
     for (const [modelKey, count] of Object.entries(models)) {
@@ -198,12 +233,10 @@ export async function getActiveRequests() {
     }
   }
 
-  // Get recent requests from history (re-read to get latest)
-  const db = await getUsageDb();
-  await db.read();
-  const history = db.data.history || [];
+  // Recent requests from in-memory ring (zero disk I/O)
+  await ensureRingInitialized();
   const seen = new Set();
-  const recentRequests = [...history]
+  const recentRequests = [...recentRing.items]
     .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
     .map((e) => {
       const t = e.tokens || {};
@@ -231,15 +264,6 @@ export async function getActiveRequests() {
  * Get usage database instance (singleton)
  */
 export async function getUsageDb() {
-  if (isCloud) {
-    // Return in-memory DB for Workers
-    if (!dbInstance) {
-      dbInstance = new Low({ read: async () => {}, write: async () => {} }, defaultData);
-      dbInstance.data = defaultData;
-    }
-    return dbInstance;
-  }
-
   if (!dbInstance) {
     const adapter = new JSONFile(DB_FILE);
     dbInstance = new Low(adapter, defaultData);
@@ -279,8 +303,6 @@ export async function getUsageDb() {
  * @param {object} entry - Usage entry { provider, model, tokens: { prompt_tokens, completion_tokens, ... }, connectionId?, apiKey? }
  */
 export async function saveRequestUsage(entry) {
-  if (isCloud) return; // Skip saving in Workers
-
   try {
     const db = await getUsageDb();
 
@@ -305,12 +327,13 @@ export async function saveRequestUsage(entry) {
     if (!db.data.dailySummary) db.data.dailySummary = {};
     aggregateEntryToDailySummary(db.data.dailySummary, entry);
 
-    const MAX_HISTORY = 10000;
+    const MAX_HISTORY = 2000;
     if (db.data.history.length > MAX_HISTORY) {
       db.data.history.splice(0, db.data.history.length - MAX_HISTORY);
     }
 
     await db.write();
+    pushToRing(entry);
     statsEmitter.emit("update");
   } catch (error) {
     console.error("Failed to save usage stats:", error);
@@ -366,8 +389,6 @@ function formatLogDate(date = new Date()) {
  * Format: datetime(dd-mm-yyyy h:m:s) | model | provider | account | tokens sent | tokens received | status
  */
 export async function appendRequestLog({ model, provider, connectionId, tokens, status }) {
-  if (isCloud) return; // Skip logging in Workers
-
   try {
     const timestamp = formatLogDate();
     const p = provider?.toUpperCase() || "-";
@@ -406,8 +427,6 @@ export async function appendRequestLog({ model, provider, connectionId, tokens, 
  * Get last N lines of log.txt
  */
 export async function getRecentLogs(limit = 200) {
-  if (isCloud) return []; // Skip in Workers
-  
   // Runtime check: ensure fs module is available
   if (!fs || typeof fs.existsSync !== "function") {
     console.error("[usageDb] fs module not available in this environment");
@@ -549,12 +568,9 @@ export async function getUsageStats(period = "all") {
     })
     .slice(0, 20);
 
-  const lifetimeTotalRequests = typeof db.data.totalRequestsLifetime === "number"
-    ? db.data.totalRequestsLifetime
-    : history.length;
-
+  // totalRequests: calculated from period-filtered data (not lifetime)
   const stats = {
-    totalRequests: lifetimeTotalRequests,
+    totalRequests: 0,
     totalPromptTokens: 0, totalCompletionTokens: 0, totalCost: 0,
     byProvider: {}, byModel: {}, byAccount: {}, byApiKey: {}, byEndpoint: {},
     last10Minutes: [],
@@ -703,6 +719,39 @@ export async function getUsageStats(period = "all") {
         if (dateKey > (stats.byEndpoint[epKey].lastUsed || "")) stats.byEndpoint[epKey].lastUsed = dateKey;
       }
     }
+
+    // Overlay lastUsed with precise ISO timestamps from live history (dailySummary only has YYYY-MM-DD)
+    const overlayCutoff = maxDays ? Date.now() - maxDays * 86400000 : 0;
+    for (const entry of history) {
+      const ts = entry.timestamp;
+      if (!ts || new Date(ts).getTime() < overlayCutoff) continue;
+
+      const modelKey = entry.provider ? `${entry.model} (${entry.provider})` : entry.model;
+      if (stats.byModel[modelKey] && new Date(ts) > new Date(stats.byModel[modelKey].lastUsed)) {
+        stats.byModel[modelKey].lastUsed = ts;
+      }
+
+      if (entry.connectionId) {
+        const accountName = connectionMap[entry.connectionId] || `Account ${entry.connectionId.slice(0, 8)}...`;
+        const accountKey = `${entry.model} (${entry.provider} - ${accountName})`;
+        if (stats.byAccount[accountKey] && new Date(ts) > new Date(stats.byAccount[accountKey].lastUsed)) {
+          stats.byAccount[accountKey].lastUsed = ts;
+        }
+      }
+
+      const apiKeyKey = (entry.apiKey && typeof entry.apiKey === "string")
+        ? `${entry.apiKey}|${entry.model}|${entry.provider || "unknown"}`
+        : "local-no-key";
+      if (stats.byApiKey[apiKeyKey] && new Date(ts) > new Date(stats.byApiKey[apiKeyKey].lastUsed)) {
+        stats.byApiKey[apiKeyKey].lastUsed = ts;
+      }
+
+      const endpoint = entry.endpoint || "Unknown";
+      const endpointKey = `${endpoint}|${entry.model}|${entry.provider || "unknown"}`;
+      if (stats.byEndpoint[endpointKey] && new Date(ts) > new Date(stats.byEndpoint[endpointKey].lastUsed)) {
+        stats.byEndpoint[endpointKey].lastUsed = ts;
+      }
+    }
   } else {
     // 24h: use live history (original logic)
     const cutoff = Date.now() - PERIOD_MS["24h"];
@@ -781,6 +830,9 @@ export async function getUsageStats(period = "all") {
       if (new Date(entry.timestamp) > new Date(epe.lastUsed)) epe.lastUsed = entry.timestamp;
     }
   }
+
+  // Calculate totalRequests from period-filtered data (not lifetime)
+  stats.totalRequests = Object.values(stats.byProvider).reduce((sum, p) => sum + (p.requests || 0), 0);
 
   return stats;
 }

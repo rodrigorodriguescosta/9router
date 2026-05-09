@@ -108,7 +108,7 @@ AddCustomModelModal.propTypes = {
 // ── ModelsCard ─────────────────────────────────────────────────
 // Self-contained card: shows models for a provider, filtered by optional `kindFilter`.
 // kindFilter: if provided, only shows models with matching type/kinds field.
-export default function ModelsCard({ providerId, kindFilter }) {
+export default function ModelsCard({ providerId, kindFilter, providerAliasOverride }) {
   const { copied, copy } = useCopyToClipboard();
   const [modelAliases, setModelAliases] = useState({});
   const [customModels, setCustomModels] = useState([]);
@@ -118,7 +118,7 @@ export default function ModelsCard({ providerId, kindFilter }) {
   const [showAddCustomModel, setShowAddCustomModel] = useState(false);
   const [connections, setConnections] = useState([]);
 
-  const providerAlias = getProviderAlias(providerId);
+  const providerAlias = providerAliasOverride || getProviderAlias(providerId);
   const effectiveType = kindFilter || "llm";
 
   const fetchData = useCallback(async () => {
@@ -165,7 +165,10 @@ export default function ModelsCard({ providerId, kindFilter }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ providerAlias, id: modelId, type: effectiveType }),
       });
-      if (res.ok) await fetchData();
+      if (res.ok) {
+        await fetchData();
+        window.dispatchEvent(new CustomEvent("customModelChanged"));
+      }
     } catch (e) { console.log("add custom model error:", e); }
   };
 
@@ -173,7 +176,10 @@ export default function ModelsCard({ providerId, kindFilter }) {
     try {
       const params = new URLSearchParams({ providerAlias, id: modelId, type: effectiveType });
       const res = await fetch(`/api/models/custom?${params}`, { method: "DELETE" });
-      if (res.ok) await fetchData();
+      if (res.ok) {
+        await fetchData();
+        window.dispatchEvent(new CustomEvent("customModelChanged"));
+      }
     } catch (e) { console.log("delete custom model error:", e); }
   };
 
@@ -284,4 +290,5 @@ export default function ModelsCard({ providerId, kindFilter }) {
 ModelsCard.propTypes = {
   providerId: PropTypes.string.isRequired,
   kindFilter: PropTypes.string, // e.g. "tts", "embedding" — filters models shown
+  providerAliasOverride: PropTypes.string, // override alias (e.g. for custom-embedding nodes using prefix)
 };
