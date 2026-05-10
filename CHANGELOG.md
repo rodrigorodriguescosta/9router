@@ -1,3 +1,43 @@
+# v0.4.28 (2026-05-10)
+
+## Features
+- Add bun:sqlite adapter with automatic runtime detection (Bun/Node)
+- Add bulk API key import (format: `name|sk-key`, one per line)
+
+## Fixes
+- Fix add API key for custom providers
+
+# v0.4.27 (2026-05-09)
+
+## Features
+- Add 3-tier DB driver fallback: better-sqlite3 → node:sqlite (Node ≥22.5) → sql.js
+
+## Fixes
+- Fix authentication logic for several providers
+
+# v0.4.25 (2026-05-09)
+
+## Features
+- Add MCP Marketplace Modal to Cowork Tool Card for easier plugin management
+- Migrate DB layer from lowdb to SQLite with modular repos pattern (better-sqlite3 / sql.js adapters, migrations, helpers)
+- Add Tailscale tunnel integration with status check API
+- Add `/api/cli-tools/all-statuses` aggregated endpoint
+- Add Cloudflare Workers AI image generation support (#973)
+- Add DeepSeek V4 Pro model and update V4 pricing (#938)
+- Add captain-definition for Caprover deployment (#954)
+
+## Improvements
+- Optimize slow page load performance
+- Refactor connection proxy configuration logic (#970)
+
+## Fixes
+- Prevent cached settings responses (#951)
+- Normalize Ollama Local provider input (#955)
+
+## Docs
+- Add Chinese translation of README (#957)
+- Fix localized README links (#956)
+
 # v0.4.20 (2026-05-07)
 
 ## Features
